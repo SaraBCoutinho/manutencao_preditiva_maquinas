@@ -11,26 +11,26 @@ Original file is located at
 
 # Commented out IPython magic to ensure Python compatibility.
 # %%capture
-# #--Preparação do ambiente
-# !pip install fancyimpute
-# 
+#--Preparação do ambiente
+!pip install fancyimpute
+ 
 # #imports
-# import pandas as pd
-# import numpy as np
-# import seaborn as sns
-# import matplotlib.pyplot as plt
-# from scipy import stats
-# from fancyimpute import IterativeImputer
-# from sklearn.experimental import enable_iterative_imputer
-# from sklearn.impute import SimpleImputer, KNNImputer, IterativeImputer
-# from sklearn.linear_model import BayesianRidge
-# from fancyimpute import IterativeImputer as MICEImputer
-# from collections import Counter
-# from sklearn.neighbors import NearestNeighbors
-# 
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from scipy import stats
+from fancyimpute import IterativeImputer
+from sklearn.experimental import enable_iterative_imputer
+from sklearn.impute import SimpleImputer, KNNImputer, IterativeImputer
+from sklearn.linear_model import BayesianRidge
+from fancyimpute import IterativeImputer as MICEImputer
+from collections import Counter
+from sklearn.neighbors import NearestNeighbors
+ 
 # #--Data
-# #from google.colab import files
-# #uploaded = files.upload()
+from google.colab import files
+uploaded = files.upload()
 
 file = '/content/bootcamp_train_1.csv'
 df = pd.read_csv(file)
