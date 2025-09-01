@@ -119,7 +119,10 @@ models_multi = {
     'ADA': MultiOutputClassifier(AdaBoostClassifier(random_state=42, **best_params_ada_multi)),
 }
 
+!mkdir saved_models
+
 #--Funções
+
 
 def treina(df, model=models['LR-OVR'], escala=True):
   """Função para treinar os modelos - 2 classes"""
@@ -143,14 +146,14 @@ def treina(df, model=models['LR-OVR'], escala=True):
     scores = None
     if hasattr(pipeline, "predict_proba"):
       scores = pipeline.predict_proba(X_test)
-    return predictions, scores, y_test
+    return predictions, scores, y_test, pipeline
   else:
     model.fit(X_train,y_train)
     predictions = model.predict(X_test)
     scores = None
     if hasattr(model, "predict_proba"):
       scores = model.predict_proba(X_test)
-    return predictions, scores, y_test
+    return predictions, scores, y_test, model
 
 def treina_multi(df, model=models_multi['LR-OVR'], escala=True):
   """Função para treinar os modelos - Multilabel"""
@@ -181,14 +184,14 @@ def treina_multi(df, model=models_multi['LR-OVR'], escala=True):
     scores = None
     if hasattr(pipeline.named_steps['classifier'].estimator, "predict_proba"):
        scores = pipeline.predict_proba(X_test)
-    return predictions, scores, y_test
+    return predictions, scores, y_test, pipeline
   else:
     model.fit(X_train,y_train)
     predictions = model.predict(X_test)
     scores = None
     if hasattr(model, "predict_proba"):
       scores = model.predict_proba(X_test)
-    return predictions, scores, y_test
+    return predictions, scores, y_test, model
 
 all_iterations_results = []
 all_iterations_results_multi = []
@@ -213,7 +216,12 @@ for i in range(num_iterations):
               chave = f"{model_name}_{df_name}_{escala_name}"
 
               try:
-                  y_pred, y_prob, y_test = treina(data, model=models[model_name], escala=escala)
+                  y_pred, y_prob, y_test, model = treina(data, model=models[model_name], escala=escala)
+
+                  # Salvar modelo
+                  filename = f'saved_models/modelo_iteracao_{i}_{model_name}_{df_name}_{escala_name}.pkl'  # nome iterativo
+                  with open(filename, 'wb') as f:
+                    pickle.dump(model, f)
 
                   #cálculo das métricas
                   accuracy = accuracy_score(y_test, y_pred)
@@ -254,7 +262,6 @@ for i in range(num_iterations):
         'metrics': dict_results_metrics,
     })
 
-
 print("\n--- Predições geradas para todas as iterações - Classificação binária ---")
 
 #predições classificação multilabel
@@ -275,7 +282,11 @@ for i in range(num_iterations):
               chave = f"{model_name}_multi_{df_name}_{escala_name}"
 
               try:
-                  y_pred, y_prob, y_test = treina_multi(data, model=models_multi[model_name], escala=escala)
+                  y_pred, y_prob, y_test, model= treina_multi(data, model=models_multi[model_name], escala=escala)
+
+                  filename = f'saved_models/modelo_multi_iteracao_{i}_{model_name}_{df_name}_{escala_name}.pkl'  # nome iterativo
+                  with open(filename, 'wb') as f:
+                    pickle.dump(model, f)
 
                   #cálculo das métricas
                   accuracy = accuracy_score(y_test, y_pred)
@@ -320,6 +331,11 @@ for i in range(num_iterations):
         'metrics': dict_results_metrics_multi,
     })
 
+    # Salvar modelo
+
+    filename = f'saved_models/modelo_multi_iteracao_{i}_{model_name}_{df_name}_{escala_name}.pkl'  # nome iterativo
+    with open(filename, 'wb') as f:
+        pickle.dump(model, f)
 
 print("\n--- Predições geradas para todas as iterações - Classificação multilabel ---")
 
@@ -342,4 +358,7 @@ print(f"Results saved to '{results_dir}' directory.")
 
 #download zip imagens
 !zip -r model_evaluation_results.zip model_evaluation_results/
+
+#download zip imagens
+!zip -r saved_models.zip saved_models/
 
