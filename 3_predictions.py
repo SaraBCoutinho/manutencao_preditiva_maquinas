@@ -33,6 +33,7 @@ import time
 from sklearn.multiclass import OneVsRestClassifier # Import OneVsRestClassifier
 import os
 import pickle
+from joblib import dump, load
 
 #--Data
 from google.colab import files
@@ -193,151 +194,155 @@ def treina_multi(df, model=models_multi['LR-OVR'], escala=True):
       scores = model.predict_proba(X_test)
     return predictions, scores, y_test, model
 
-all_iterations_results = []
-all_iterations_results_multi = []
+#all_iterations_results = []
+all_results = []
+#all_iterations_results_multi = []
 
-num_iterations = 3
+#num_iterations = 3
 
 #predições classificação binária
 
-for i in range(num_iterations):
-    print(f"--- Iteração {i+1}/{num_iterations} ---")
+#for i in range(num_iterations):
+#    print(f"--- Iteração {i+1}/{num_iterations} ---")
 
-    #inicializando dicionario dos resultados
-    dict_results_predictions = {}
-    dict_results_proba = {}
-    dict_results_metrics = {}
+#inicializando dicionario dos resultados
+dict_results_predictions = {}
+dict_results_proba = {}
+dict_results_metrics = {}
 
-    #aplicando função classificação binária
-    for model_name in models.keys():
-      for data, df_name in [(df, "df"), (df_treated, "df_treated")]:
-        for escala, escala_name in [(True, "scaled"), (False, "not_scaled")]:
-              print(f"--Modelo {model_name}--Dataframe {df_name}--Escala {escala_name}--")
-              chave = f"{model_name}_{df_name}_{escala_name}"
+#aplicando função classificação binária
+for model_name in models.keys():
+  for data, df_name in [(df, "df"), (df_treated, "df_treated")]:
+    for escala, escala_name in [(True, "scaled"), (False, "not_scaled")]:
+          print(f"--Modelo {model_name}--Dataframe {df_name}--Escala {escala_name}--")
+          chave = f"{model_name}_{df_name}_{escala_name}"
 
-              try:
-                  y_pred, y_prob, y_test, model = treina(data, model=models[model_name], escala=escala)
+          try:
+              y_pred, y_prob, y_test, model = treina(data, model=models[model_name], escala=escala)
 
-                  # Salvar modelo
-                  filename = f'saved_models/modelo_iteracao_{i}_{model_name}_{df_name}_{escala_name}.pkl'  # nome iterativo
-                  with open(filename, 'wb') as f:
-                    pickle.dump(model, f)
+              # Salvar modelo
+              filename = f'saved_models/modelo_{model_name}_{df_name}_{escala_name}.joblib'
+              dump(model, filename)
+              #filename = f'saved_models/modelo_iteracao_{i}_{model_name}_{df_name}_{escala_name}.pkl'  # nome iterativo
+              #with open(filename, 'wb') as f:
+              #  pickle.dump(model, f)
 
-                  #cálculo das métricas
-                  accuracy = accuracy_score(y_test, y_pred)
-                  precision = precision_score(y_test, y_pred, average='weighted')
-                  recall = recall_score(y_test, y_pred, average='weighted')
-                  f1 = f1_score(y_test, y_pred, average='weighted')
+              #cálculo das métricas
+              accuracy = accuracy_score(y_test, y_pred)
+              precision = precision_score(y_test, y_pred, average='weighted')
+              recall = recall_score(y_test, y_pred, average='weighted')
+              f1 = f1_score(y_test, y_pred, average='weighted')
 
-                  roc_auc_scores = {}
-                  if y_prob is not None:
-                      for i in range(y_prob.shape[1]):
-                          try:
-                              y_test_bin = (y_test == i).astype(int)
-                              y_prob_class = y_prob[:, i]
-                              fpr, tpr, thresholds = roc_curve(y_test_bin, y_prob_class)
-                              roc_auc = auc(fpr, tpr)
-                              roc_auc_scores[f'class_{i}'] = roc_auc
-                          except ValueError as e:
-                              print(f"Não é possível calcular a ROC AUC para classe {i}: {e}")
-                              roc_auc_scores[f'class_{i}'] = None
-                  else:
-                      print(f"Probabilidades não disponíveis para o modelo {model_name}.")
-                      roc_auc_scores = None
-                  dict_results_predictions[chave] = y_pred
-                  dict_results_proba[chave] = y_prob
-                  dict_results_metrics[chave] = {'accuracy': accuracy,'precision': precision,'recall': recall,'f1_score': f1,'roc_auc': roc_auc_scores}
+              roc_auc_scores = {}
+              if y_prob is not None:
+                  for i in range(y_prob.shape[1]):
+                      try:
+                          y_test_bin = (y_test == i).astype(int)
+                          y_prob_class = y_prob[:, i]
+                          fpr, tpr, thresholds = roc_curve(y_test_bin, y_prob_class)
+                          roc_auc = auc(fpr, tpr)
+                          roc_auc_scores[f'class_{i}'] = roc_auc
+                      except ValueError as e:
+                          print(f"Não é possível calcular a ROC AUC para classe {i}: {e}")
+                          roc_auc_scores[f'class_{i}'] = None
+              else:
+                  print(f"Probabilidades não disponíveis para o modelo {model_name}.")
+                  roc_auc_scores = None
+              dict_results_predictions[chave] = y_pred
+              dict_results_proba[chave] = y_prob
+              dict_results_metrics[chave] = {'accuracy': accuracy,'precision': precision,'recall': recall,'f1_score': f1,'roc_auc': roc_auc_scores}
 
-              except Exception as e:
-                  print(f"An error occurred for {chave}: {e}")
-                  dict_results_predictions[chave] = None
-                  dict_results_proba[chave] = None
-                  dict_results_metrics[chave] = None
+          except Exception as e:
+              print(f"An error occurred for {chave}: {e}")
+              dict_results_predictions[chave] = None
+              dict_results_proba[chave] = None
+              dict_results_metrics[chave] = None
 
-    #guardando todos os resultados
-    all_iterations_results.append({
-        'iteration': i,
-        'predictions': dict_results_predictions,
-        'proba': dict_results_proba,
-        'metrics': dict_results_metrics,
-    })
+#guardando todos os resultados
+#all_iterations_results.append({
+all_results.append({
+    #'iteration': i,
+    'predictions': dict_results_predictions,
+    'proba': dict_results_proba,
+    'metrics': dict_results_metrics,
+})
 
-print("\n--- Predições geradas para todas as iterações - Classificação binária ---")
+#print("\n--- Predições geradas para todas as iterações - Classificação binária ---")
+print("\n--- Predições geradas - Classificação binária ---")
 
 #predições classificação multilabel
+all_results_multi = []
+#for i in range(num_iterations):
+#    print(f"--- Iteração {i+1}/{num_iterations} ---")
 
-for i in range(num_iterations):
-    print(f"--- Iteração {i+1}/{num_iterations} ---")
+#inicializando dicionario dos resultados
+dict_results_predictions_multi = {}
+dict_results_proba_multi = {}
+dict_results_metrics_multi = {}
 
-    #inicializando dicionario dos resultados
-    dict_results_predictions_multi = {}
-    dict_results_proba_multi = {}
-    dict_results_metrics_multi = {}
+#aplicando função classificação multilabel
+for model_name in models_multi.keys():
+  for data, df_name in [(df, "df"), (df_treated, "df_treated")]:
+    for escala, escala_name in [(True, "scaled"), (False, "not_scaled")]:
+          print(f"--Modelo {model_name}--Dataframe {df_name}--Escala {escala_name}--")
+          chave = f"{model_name}_multi_{df_name}_{escala_name}"
 
-    #aplicando função classificação multilabel
-    for model_name in models_multi.keys():
-      for data, df_name in [(df, "df"), (df_treated, "df_treated")]:
-        for escala, escala_name in [(True, "scaled"), (False, "not_scaled")]:
-              print(f"--Modelo {model_name}--Dataframe {df_name}--Escala {escala_name}--")
-              chave = f"{model_name}_multi_{df_name}_{escala_name}"
+          try:
+              y_pred, y_prob, y_test, model= treina_multi(data, model=models_multi[model_name], escala=escala)
 
-              try:
-                  y_pred, y_prob, y_test, model= treina_multi(data, model=models_multi[model_name], escala=escala)
+              # Salvar modelo
+              filename = f'saved_models/modelo_multi_{model_name}_{df_name}_{escala_name}.joblib'
+              dump(model, filename)
+#                  filename = f'saved_models/modelo_multi_iteracao_{i}_{model_name}_{df_name}_{escala_name}.pkl'  # nome iterativo
+#                  with open(filename, 'wb') as f:
+#                    pickle.dump(model, f)
 
-                  filename = f'saved_models/modelo_multi_iteracao_{i}_{model_name}_{df_name}_{escala_name}.pkl'  # nome iterativo
-                  with open(filename, 'wb') as f:
-                    pickle.dump(model, f)
+              #cálculo das métricas
+              accuracy = accuracy_score(y_test, y_pred)
+              precision = precision_score(y_test, y_pred, average='weighted', zero_division=1)
+              recall = recall_score(y_test, y_pred, average='weighted', zero_division=1)
+              f1 = f1_score(y_test, y_pred, average='weighted', zero_division=1)
 
-                  #cálculo das métricas
-                  accuracy = accuracy_score(y_test, y_pred)
-                  precision = precision_score(y_test, y_pred, average='weighted', zero_division=1)
-                  recall = recall_score(y_test, y_pred, average='weighted', zero_division=1)
-                  f1 = f1_score(y_test, y_pred, average='weighted', zero_division=1)
+              roc_auc_scores = {}
+              if y_prob is not None and isinstance(y_prob, list):
+                  for i in range(len(y_prob)):
+                      try:
+                          y_test_bin = y_test.iloc[:, i]
+                          y_prob_class = y_prob[i][:, 1]
+                          fpr, tpr, thresholds = roc_curve(y_test_bin, y_prob_class)
+                          roc_auc = auc(fpr, tpr)
+                          roc_auc_scores[f'label_{i}'] = roc_auc
+                      except ValueError as e:
+                          print(f"Não é possível calcular a ROC AUC para classe {i}: {e}")
+                          roc_auc_scores[f'label_{i}'] = None
+                      except IndexError as e:
+                            print(f"Index error.")
+                            roc_auc_scores[f'label_{i}'] = None
+              else:
+                  print(f"Erro ao buscar as probabilidades para o {model_name}.")
+                  roc_auc_scores = None
 
-                  roc_auc_scores = {}
-                  if y_prob is not None and isinstance(y_prob, list):
-                      for i in range(len(y_prob)):
-                          try:
-                              y_test_bin = y_test.iloc[:, i]
-                              y_prob_class = y_prob[i][:, 1]
-                              fpr, tpr, thresholds = roc_curve(y_test_bin, y_prob_class)
-                              roc_auc = auc(fpr, tpr)
-                              roc_auc_scores[f'label_{i}'] = roc_auc
-                          except ValueError as e:
-                              print(f"Não é possível calcular a ROC AUC para classe {i}: {e}")
-                              roc_auc_scores[f'label_{i}'] = None
-                          except IndexError as e:
-                               print(f"Index error.")
-                               roc_auc_scores[f'label_{i}'] = None
-                  else:
-                      print(f"Erro ao buscar as probabilidades para o {model_name}.")
-                      roc_auc_scores = None
+              dict_results_predictions_multi[chave] = y_pred
+              dict_results_proba_multi[chave] = y_prob
+              dict_results_metrics_multi[chave] = {'accuracy': accuracy,'precision': precision,'recall': recall,'f1_score': f1,'roc_auc': roc_auc_scores}
 
-                  dict_results_predictions_multi[chave] = y_pred
-                  dict_results_proba_multi[chave] = y_prob
-                  dict_results_metrics_multi[chave] = {'accuracy': accuracy,'precision': precision,'recall': recall,'f1_score': f1,'roc_auc': roc_auc_scores}
+          except Exception as e:
+              print(f"An error occurred for {chave}: {e}")
+              dict_results_predictions_multi[chave] = None
+              dict_results_proba_multi[chave] = None
+              dict_results_metrics_multi[chave] = None
 
-              except Exception as e:
-                  print(f"An error occurred for {chave}: {e}")
-                  dict_results_predictions_multi[chave] = None
-                  dict_results_proba_multi[chave] = None
-                  dict_results_metrics_multi[chave] = None
+#guardando todos os resultados
+#all_iterations_results_multi.append({
+all_results_multi.append({
+    #'iteration': i,
+    'predictions': dict_results_predictions_multi,
+    'proba': dict_results_proba_multi,
+    'metrics': dict_results_metrics_multi,
+})
 
-    #guardando todos os resultados
-    all_iterations_results_multi.append({
-        'iteration': i,
-        'predictions': dict_results_predictions_multi,
-        'proba': dict_results_proba_multi,
-        'metrics': dict_results_metrics_multi,
-    })
-
-    # Salvar modelo
-
-    filename = f'saved_models/modelo_multi_iteracao_{i}_{model_name}_{df_name}_{escala_name}.pkl'  # nome iterativo
-    with open(filename, 'wb') as f:
-        pickle.dump(model, f)
-
-print("\n--- Predições geradas para todas as iterações - Classificação multilabel ---")
+#print("\n--- Predições geradas para todas as iterações - Classificação multilabel ---")
+print("\n--- Predições geradas - Classificação multilabel ---")
 
 #salvando resultados
 
@@ -348,10 +353,12 @@ resultados_treina = os.path.join(results_dir, "resultados_treina.pkl")
 resultados_treina_multi = os.path.join(results_dir, "resultados_treina_multi.pkl")
 
 with open(resultados_treina, 'wb') as f:
-    pickle.dump(all_iterations_results, f)
+    pickle.dump(all_results, f)
+    #pickle.dump(all_iterations_results, f)
 
 with open(resultados_treina_multi, 'wb') as f:
-    pickle.dump(all_iterations_results_multi, f)
+    pickle.dump(all_results_multi, f)
+    #pickle.dump(all_iterations_results_multi, f)
 
 print("-"*50)
 print(f"Results saved to '{results_dir}' directory.")
