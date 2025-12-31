@@ -3,7 +3,7 @@
 Este é o Projeto Final Bootcamp CDIA. 
 O problema proposto tratou do cenário de manutenção. Os principais insights obtidos foram: 
 
-☑ Por fim concluímos dentre os insights extraídos do estudo sumarizados:
+☑ Conclusões a partir dos insights extraídos:
 
 * a engenharia de manutenção auxilia a prever a ocorrência da próxima falha, mas a ciência de dados pode auxiliar a detectar a causa raíz, qual a feature que levou a falha no equipamento.
 
@@ -13,7 +13,7 @@ O problema proposto tratou do cenário de manutenção. Os principais insights o
 
 * O desgaste dos equipamentos tem reflexo na velocidade de rotação, que tende a diminui
 
-* a falha por dissipação de calor é resultate da degradação de materiais
+* a falha por dissipação de calor é resultante da degradação de materiais
 
 * a degradação de materiais pode ocorrer de forma prematura, o que reduz o tempo de vida útil do equipamento
 
